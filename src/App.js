@@ -151,7 +151,7 @@ function sanitize(str, { maxLength = 200 } = {}) {
 }
 
 function validatePhone(tel) {
-  return /^(\+33|0)[0-9 .\-]{8,14}$/.test(tel.replace(/\s/g, ""));
+  return /^(\+33|0)[0-9 .-]{8,14}$/.test(tel.replace(/\s/g, ""));
 }
 
 // ─────────────────────────────────────────────────────────────────
