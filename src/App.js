@@ -186,7 +186,7 @@ function sanitize(str, { maxLength = 200 } = {}) {
 }
 
 function validatePhone(tel) {
-  return /^(\+33|0)[0-9 .\-]{8,14}$/.test(tel.replace(/\s/g, ""));
+  return /^(\+33|0)[0-9 .-]{8,14}$/.test(tel.replace(/\s/g, ""));
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1761,7 +1761,7 @@ function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("active"); // "active" | "done"
-  const audioRef = useRef(null);
+  //const audioRef = useRef(null);
   const prevCountRef = useRef(0);
 
   // Charger les commandes initiales
