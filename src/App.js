@@ -1,6 +1,5 @@
 
-import React, { useState, useReducer, useEffect, createContext, useContext } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useReducer, createContext, useContext } from "react";
 
 // --- LOGIQUE PANIER ---
 const CartContext = createContext();
@@ -53,7 +52,7 @@ const MenuSection = () => {
 };
 
 const CartDrawer = ({ isOpen, onClose }) => {
-  const { cart, dispatch, total, grandTotal, naanOffert } = useContext(CartContext);
+  const { cart, dispatch, grandTotal, naanOffert } = useContext(CartContext);
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
