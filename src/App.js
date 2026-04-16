@@ -1761,7 +1761,6 @@ function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("active"); // "active" | "done"
-  //const audioRef = useRef(null);
   const prevCountRef = useRef(0);
 
   // Charger les commandes initiales
