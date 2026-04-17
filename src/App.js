@@ -194,7 +194,6 @@ function validatePhone(tel) {
 // ─────────────────────────────────────────────────────────────────
 const CartContext = createContext(null);
 const STORAGE_KEY = "tj_cart_v3";
-const LIVRAISON_THRESHOLD = 25;   // livraison offerte
 const NAAN_THRESHOLD = 35;        // Naan Fromage offert
 const NAAN_GIFT = {
   id: "gift::naan-fromage",
@@ -560,75 +559,44 @@ function MenuSection() {
 // SECTION 8 — DOUBLE BARRE DE PROGRESSION (panier)
 // ─────────────────────────────────────────────────────────────────
 function CartProgressBars({ total }) {
-  const livraisonDone = total >= LIVRAISON_THRESHOLD;
-  const naanDone      = total >= NAAN_THRESHOLD;
+  const threshold = 35; // Ton curseur cadeau
+  const isDone = total >= threshold;
+  const progress = Math.min((total / threshold) * 100, 100);
 
-  if (naanDone) {
+  if (isDone) {
     return (
-      <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/20 rounded-xl p-3 text-center">
-        <p className="text-[#2D6A4F] text-xs font-bold">
-          🎁 Livraison offerte + Naan Fromage offert !
+      <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/20 rounded-xl p-3 text-center shadow-sm">
+        <p className="text-[#2D6A4F] text-xs font-bold flex items-center justify-center gap-2">
+          🎁 Naan Fromage ou Boisson offert !
         </p>
       </div>
     );
   }
 
-  if (livraisonDone) {
-    // Progression vers le Naan (25€ → 35€)
-    const progress = Math.min(((total - LIVRAISON_THRESHOLD) / (NAAN_THRESHOLD - LIVRAISON_THRESHOLD)) * 100, 100);
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <p className="text-xs text-[#6B4030]">
-            🎁 Encore{" "}
-            <span className="text-[#2D6A4F] font-bold">
-              {(NAAN_THRESHOLD - total).toFixed(2)} €
-            </span>{" "}
-            pour votre <strong>Naan Fromage offert</strong>
-          </p>
-          <span className="text-[10px] text-[#6B4030]/60">35 €</span>
-        </div>
-        <div className="h-2 bg-[#FFFAF1] border border-[#A45C40]/10 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: "spring", damping: 20 }}
-            className="h-full bg-gradient-to-r from-[#F4BB44] to-[#2D6A4F] rounded-full"
-          />
-        </div>
-        <p className="text-[10px] text-[#2D6A4F] mt-1">✓ Livraison offerte débloquée !</p>
-      </div>
-    );
-  }
-
-  // Progression vers livraison offerte (0 → 25€)
-  const progress = Math.min((total / LIVRAISON_THRESHOLD) * 100, 100);
   return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
+    <div className="py-2">
+      <div className="flex justify-between items-center mb-2">
         <p className="text-xs text-[#6B4030]">
-          🛵 Encore{" "}
-          <span className="text-[#A45C40] font-bold">
-            {(LIVRAISON_THRESHOLD - total).toFixed(2)} €
-          </span>{" "}
-          pour la livraison offerte
+          🎁 Plus que <span className="font-bold text-[#A45C40]">{(threshold - total).toFixed(2)} €</span> pour votre cadeau
         </p>
-        <span className="text-[10px] text-[#6B4030]/60">25 €</span>
+        <span className="text-[10px] font-bold text-[#6B4030]/40 uppercase tracking-tighter">Objectif 35€</span>
       </div>
-      <div className="h-2 bg-[#FFFAF1] border border-[#A45C40]/10 rounded-full overflow-hidden">
+      
+      <div className="h-2 bg-white border border-[#A45C40]/10 rounded-full overflow-hidden shadow-inner">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ type: "spring", damping: 20 }}
-          className="h-full bg-gradient-to-r from-[#A45C40] to-[#F4BB44] rounded-full"
+          transition={{ type: "spring", damping: 20, stiffness: 100 }}
+          className="h-full bg-gradient-to-r from-[#F4BB44] to-[#A45C40] rounded-full"
         />
       </div>
-      <p className="text-[10px] text-[#6B4030]/60 mt-1">
-        À 35€ : Naan Fromage offert 🎁
+      
+      <p className="text-[10px] text-[#6B4030]/50 italic mt-2 text-center">
+        Un Naan Fromage ou une boisson offert dès 35€ de commande
       </p>
     </div>
   );
-}
+}}
 
 // ─────────────────────────────────────────────────────────────────
 // SECTION 9 — TIROIR PANIER (Slide-over)
@@ -1185,7 +1153,7 @@ function FridayBanner() {
 // Objectif : +10 avis Google 5★ / mois → remonte dans Maps
 // ─────────────────────────────────────────────────────────────────
 function ReviewSection() {
-  // ← Remplacez ce lien par votre vrai lien Google Reviews
+  // https://g.page/r/CTvTozVxouYtEAE/review
   // Pour le trouver : Google Maps → votre fiche → "Demander des avis"
   const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=VOTRE_PLACE_ID";
 
@@ -1227,7 +1195,7 @@ function ReviewSection() {
           <p className="text-[#6B4030] text-base leading-relaxed mb-8 max-w-lg mx-auto">
             Vous avez apprécié votre repas ? Laissez-nous un avis{" "}
             <strong className="text-[#1A0A00]">5 étoiles sur Google</strong> et recevez un{" "}
-            <strong className="text-[#1A0A00]">dessert maison offert</strong> à votre prochaine visite.
+            <strong className="text-[#1A0A00]">produit offert</strong> à votre prochaine visite.
             Mentionnez simplement votre avis au comptoir.
           </p>
 
@@ -1236,7 +1204,7 @@ function ReviewSection() {
             {[
               { num: "1", icon: "📱", text: "Cliquez sur le bouton ci-dessous" },
               { num: "2", icon: "⭐", text: "Laissez un avis 5 étoiles" },
-              { num: "3", icon: "🍮", text: "Réclamez votre dessert au comptoir" },
+              { num: "3", icon: "🍮", text: "Réclamez votre produit au comptoir" },
             ].map((step) => (
               <div key={step.num} className="flex flex-col items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-[#F4BB44] text-[#1A0A00] flex items-center justify-center text-xs font-black">
@@ -1267,10 +1235,10 @@ function ReviewSection() {
 
           <p className="text-[#6B4030]/50 text-xs mt-4">
             ⭐ {" "}
-            <span className="font-semibold text-[#6B4030]">218 avis</span>
+            <span className="font-semibold text-[#6B4030]">435 avis</span>
             {" "} · Note moyenne {" "}
-            <span className="font-semibold text-[#6B4030]">4.7/5</span>
-            {" "} — Aidez-nous à atteindre 250 avis !
+            <span className="font-semibold text-[#6B4030]">4.3/5</span>
+            {" "} — Aidez-nous à atteindre 500 avis !
           </p>
         </motion.div>
       </div>
@@ -1419,9 +1387,9 @@ function Hero({ onOrder }) {
 
         {/* Social proof */}
         <div className="flex items-center justify-center gap-4 mt-10 text-sm text-[#6B4030]">
-          <span>⭐ 4.7 / 5</span>
+          <span>⭐ 4.3 / 5</span>
           <span className="w-px h-4 bg-[#A45C40]/30" />
-          <span>218 avis Google</span>
+          <span>435 avis Google</span>
           <span className="w-px h-4 bg-[#A45C40]/30" />
           <span>Ouvert 7j/7</span>
         </div>
