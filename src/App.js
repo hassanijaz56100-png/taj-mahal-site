@@ -2,7 +2,7 @@
 // ║       TAJ MAHAL LORIENT — SPA v4.1 (Sprint 2+ — Pickup Only)   ║
 // ║  Stack : React 18 + Tailwind CSS + Framer Motion + Supabase    ║
 // ║  Design: Light & Airy Luxury — Fond crème #FFFAF1              ║
-// ║  ✅ Naan Fromage offert automatique à 35€                       ║
+//                                                                   ║
 // ║  ✅ Mode À emporter uniquement (livraison supprimée)            ║
 // ║  ✅ Code promo TAJ10 → -10% sur tout                           ║
 // ║  ✅ Commandes réelles → Supabase                                ║
@@ -340,7 +340,7 @@ const SEO_JSON_LD = {
       closes: "22:00",
     },
   ],
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "524" },
+  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.3", reviewCount: "435" },
 };
 
 // ─────────────────────────────────────────────────────────────────
