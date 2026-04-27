@@ -1,14 +1,13 @@
-
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║       TAJ MAHAL LORIENT — SPA v4.0 (Sprint 2 — Supabase)       ║
+// ║       TAJ MAHAL LORIENT — SPA v4.1 (Sprint 2+ — Pickup Only)   ║
 // ║  Stack : React 18 + Tailwind CSS + Framer Motion + Supabase    ║
 // ║  Design: Light & Airy Luxury — Fond crème #FFFAF1              ║
 // ║  ✅ Naan Fromage offert automatique à 35€                       ║
-// ║  ✅ Menus Midi bloqués à l'emporté                              ║
-// ║  ✅ Double barre de progression (livraison + cadeau)            ║
+// ║  ✅ Mode À emporter uniquement (livraison supprimée)            ║
+// ║  ✅ Code promo TAJ10 → -10% sur tout                           ║
 // ║  ✅ Commandes réelles → Supabase                                ║
 // ║  ✅ Dashboard admin temps réel (PIN protégé)                    ║
-// ║  ✅ Notification sonore nouvelle commande                       ║
+// ║  ✅ Impression ticket thermique 80mm par commande               ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 import {
@@ -64,14 +63,6 @@ const restaurantData = {
     },
   ],
   menu: {
-    // ── Menus Midi : RÉSERVÉS SUR PLACE — bloqués à l'emporté ──────
-    "Menus Midi 🏠": [
-      { nom: "Menu Midi Poulet",      prix: 13.00, desc: "Entrée + curry de poulet + riz basmati + naan nature.", onSiteOnly: true },
-      { nom: "Menu Midi Végétarien",  prix: 13.00, desc: "Entrée + plat végétarien + riz basmati + naan nature.", onSiteOnly: true, veggie: true },
-      { nom: "Menu Midi Agneau",      prix: 13.00, desc: "Entrée + curry d'agneau + riz basmati + naan nature.", onSiteOnly: true },
-      { nom: "Menu Midi Poisson",     prix: 13.00, desc: "Entrée + curry de saumon + riz basmati + naan nature.", onSiteOnly: true },
-      { nom: "Menu Midi Boeuf",       prix: 13.00, desc: "Entrée + curry de bœuf + riz basmati + naan nature.", onSiteOnly: true },
-    ],
     "Entrées": [
       { nom: "Samosa Sabzi",            prix: 6.00,  desc: "Chaussons aux légumes du Pendjab.", veggie: true },
       { nom: "Pakora Mixte",            prix: 6.00,  desc: "Beignets de légumes à la farine de pois chiches.", veggie: true },
@@ -186,7 +177,7 @@ function sanitize(str, { maxLength = 200 } = {}) {
 }
 
 function validatePhone(tel) {
-  return /^(\+33|0)[0-9 .-]{8,14}$/.test(tel.replace(/\s/g, ""));
+  return /^(\+33|0)[0-9 .\-]{8,14}$/.test(tel.replace(/\s/g, ""));
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -195,6 +186,7 @@ function validatePhone(tel) {
 const CartContext = createContext(null);
 const STORAGE_KEY = "tj_cart_v3";
 const NAAN_THRESHOLD = 35;        // Naan Fromage offert
+const PROMO_CODE = "TAJ10";       // Code promo → -10%
 const NAAN_GIFT = {
   id: "gift::naan-fromage",
   nom: "Naan Fromage 🎁",
@@ -250,6 +242,17 @@ function CartProvider({ children }) {
   const [naanToast, setNaanToast] = useState(false);
   const prevNaanRef = useRef(false);
 
+  // Code promo
+  const [promoApplied, setPromoApplied] = useState(false);
+  const applyPromo = useCallback((code) => {
+    if (code.trim().toUpperCase() === PROMO_CODE) {
+      setPromoApplied(true);
+      return true;
+    }
+    return false;
+  }, []);
+  const removePromo = useCallback(() => setPromoApplied(false), []);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   }, [cart]);
@@ -271,8 +274,8 @@ function CartProvider({ children }) {
   const displayCart = naanGiftEarned ? [...cart, NAAN_GIFT] : cart;
   const total       = baseTotal;
   const count       = displayCart.reduce((s, i) => s + i.qty, 0);
-  const deliveryFee = total > 0 && total < LIVRAISON_THRESHOLD ? 2.50 : 0;
-  const grandTotal  = total + deliveryFee;
+  const discount    = promoApplied ? Math.round(total * 0.10 * 100) / 100 : 0;
+  const grandTotal  = Math.max(0, total - discount);
 
   return (
     <CartContext.Provider
@@ -283,11 +286,15 @@ function CartProvider({ children }) {
         total,
         baseTotal,
         count,
-        deliveryFee,
+        deliveryFee: 0,
         grandTotal,
         naanGiftEarned,
         naanToast,
         setNaanToast,
+        promoApplied,
+        discount,
+        applyPromo,
+        removePromo,
       }}
     >
       {children}
@@ -333,7 +340,7 @@ const SEO_JSON_LD = {
       closes: "22:00",
     },
   ],
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.7", reviewCount: "218" },
+  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "524" },
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -507,13 +514,6 @@ function MenuSection() {
           <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#F4BB44] to-transparent mx-auto mt-4" />
         </motion.div>
 
-        {/* Note menus midi */}
-        <div className="mb-6 flex items-center gap-2 justify-center">
-          <span className="text-[#A45C40] text-sm bg-[#A45C40]/8 border border-[#A45C40]/20 rounded-xl px-4 py-2">
-            🏠 Les menus midi sont réservés à la <strong>restauration sur place</strong> uniquement
-          </span>
-        </div>
-
         {/* Onglets catégories sticky */}
         <div
           ref={tabsRef}
@@ -556,47 +556,45 @@ function MenuSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// SECTION 8 — DOUBLE BARRE DE PROGRESSION (panier)
+// SECTION 8 — BARRE DE PROGRESSION vers le cadeau Naan
 // ─────────────────────────────────────────────────────────────────
 function CartProgressBars({ total }) {
-  const threshold = 35; // Ton curseur cadeau
-  const isDone = total >= threshold;
-  const progress = Math.min((total / threshold) * 100, 100);
+  const naanDone = total >= NAAN_THRESHOLD;
 
-  if (isDone) {
+  if (naanDone) {
     return (
-      <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/20 rounded-xl p-3 text-center shadow-sm">
-        <p className="text-[#2D6A4F] text-xs font-bold flex items-center justify-center gap-2">
-          🎁 Naan Fromage ou Boisson offert !
+      <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/20 rounded-xl p-3 text-center">
+        <p className="text-[#2D6A4F] text-xs font-bold">
+          🎁 Naan Fromage offert sur votre commande !
         </p>
       </div>
     );
   }
 
+  const progress = Math.min((total / NAAN_THRESHOLD) * 100, 100);
   return (
-    <div className="py-2">
-      <div className="flex justify-between items-center mb-2">
+    <div>
+      <div className="flex justify-between items-center mb-1">
         <p className="text-xs text-[#6B4030]">
-          🎁 Plus que <span className="font-bold text-[#A45C40]">{(threshold - total).toFixed(2)} €</span> pour votre cadeau
+          🎁 Encore{" "}
+          <span className="text-[#2D6A4F] font-bold">
+            {(NAAN_THRESHOLD - total).toFixed(2)} €
+          </span>{" "}
+          pour votre <strong>Naan Fromage offert</strong>
         </p>
-        <span className="text-[10px] font-bold text-[#6B4030]/40 uppercase tracking-tighter">Objectif 35€</span>
+        <span className="text-[10px] text-[#6B4030]/60">35 €</span>
       </div>
-      
-      <div className="h-2 bg-white border border-[#A45C40]/10 rounded-full overflow-hidden shadow-inner">
+      <div className="h-2 bg-[#FFFAF1] border border-[#A45C40]/10 rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ type: "spring", damping: 20, stiffness: 100 }}
-          className="h-full bg-gradient-to-r from-[#F4BB44] to-[#A45C40] rounded-full"
+          transition={{ type: "spring", damping: 20 }}
+          className="h-full bg-gradient-to-r from-[#A45C40] to-[#F4BB44] rounded-full"
         />
       </div>
-      
-      <p className="text-[10px] text-[#6B4030]/50 italic mt-2 text-center">
-        Un Naan Fromage ou une boisson offert dès 35€ de commande
-      </p>
     </div>
   );
-}}
+}
 
 // ─────────────────────────────────────────────────────────────────
 // SECTION 9 — TIROIR PANIER (Slide-over)
@@ -752,19 +750,9 @@ function CartDrawer({ open, onClose, onCheckout }) {
                 <CartProgressBars total={total} />
 
                 {/* Totaux */}
-                <div className="flex justify-between text-xs text-[#6B4030]">
-                  <span>Sous-total</span>
-                  <span>{total.toFixed(2)} €</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-[#6B4030]">Livraison</span>
-                  <span className={total >= LIVRAISON_THRESHOLD ? "text-[#2D6A4F] font-semibold" : "text-[#1A0A00]"}>
-                    {total >= LIVRAISON_THRESHOLD ? "Offerte 🎉" : `${deliveryFee.toFixed(2)} €`}
-                  </span>
-                </div>
-                <div className="flex justify-between font-bold text-sm pt-1.5 border-t border-[#A45C40]/10">
+                <div className="flex justify-between font-bold text-sm pt-1 border-t border-[#A45C40]/10">
                   <span className="text-[#1A0A00]">Total</span>
-                  <span className="text-[#A45C40]">{grandTotal.toFixed(2)} €</span>
+                  <span className="text-[#A45C40]">{total.toFixed(2)} €</span>
                 </div>
 
                 <button
@@ -792,13 +780,15 @@ function CartDrawer({ open, onClose, onCheckout }) {
 // SECTION 10 — CHECKOUT ONE-PAGE
 // ─────────────────────────────────────────────────────────────────
 function CheckoutPage({ onBack }) {
-  const { cart, grandTotal, dispatch } = useCart();
-  const [mode, setMode]       = useState("pickup");
+  const { cart, total, grandTotal, discount, promoApplied, applyPromo, removePromo, dispatch } = useCart();
+  const mode = "pickup"; // Uniquement à emporter
   const [step, setStep]       = useState(1);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
+  const [promoInput, setPromoInput] = useState("");
+  const [promoError, setPromoError] = useState("");
   const [form, setForm]       = useState({
-    name: "", phone: "", heure: "", address: "", note: "",
+    name: "", phone: "", heure: "", note: "",
   });
 
   const handleChange = (e) => {
@@ -810,6 +800,13 @@ function CheckoutPage({ onBack }) {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  const handleApplyPromo = () => {
+    if (promoApplied) { removePromo(); setPromoInput(""); setPromoError(""); return; }
+    const ok = applyPromo(promoInput);
+    if (!ok) setPromoError("Code invalide");
+    else setPromoError("");
+  };
+
   const validate = () => {
     const errs = {};
     if (!form.name.trim() || form.name.length < 2)
@@ -818,8 +815,6 @@ function CheckoutPage({ onBack }) {
       errs.phone = "Numéro invalide (ex : 06 12 34 56 78)";
     if (!form.heure)
       errs.heure = "Heure de retrait requise";
-    if (mode === "delivery" && form.address.length < 5)
-      errs.address = "Adresse de livraison requise";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -831,11 +826,11 @@ function CheckoutPage({ onBack }) {
       const { error } = await supabase.from("orders").insert([{
         items:          cart.filter(i => !i.isGift),
         total:          grandTotal,
-        mode,
+        mode:           "pickup",
         customer_name:  form.name,
         customer_phone: form.phone,
         pickup_time:    form.heure,
-        address:        form.address || null,
+        address:        null,
         note:           form.note   || null,
         naan_gift:      cart.some(i => i.isGift),
         status:         "pending",
@@ -843,6 +838,7 @@ function CheckoutPage({ onBack }) {
       if (error) throw error;
       setStep(2);
       dispatch({ type: "CLEAR" });
+      removePromo();
     } catch (err) {
       console.error("Erreur commande :", err);
       alert("Une erreur est survenue. Veuillez appeler le restaurant directement au 02 97 84 04 04.");
@@ -928,31 +924,22 @@ function CheckoutPage({ onBack }) {
               </div>
             ))}
           </div>
+          {promoApplied && (
+            <div className="flex justify-between text-xs text-[#2D6A4F] font-semibold mt-1">
+              <span>Code TAJ10 (-10%)</span>
+              <span>-{discount.toFixed(2)} €</span>
+            </div>
+          )}
           <div className="border-t border-[#A45C40]/10 mt-3 pt-3 flex justify-between font-bold">
             <span className="text-[#1A0A00] text-sm">Total</span>
             <span className="text-[#A45C40]">{grandTotal.toFixed(2)} €</span>
           </div>
         </div>
 
-        {/* Mode livraison / à emporter */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {[
-            { k: "pickup",   icon: "🏪", label: "À emporter" },
-            { k: "delivery", icon: "🛵", label: "Livraison"  },
-          ].map((m) => (
-            <button
-              key={m.k}
-              onClick={() => setMode(m.k)}
-              className={`flex flex-col items-center gap-1.5 py-4 rounded-xl border transition-all ${
-                mode === m.k
-                  ? "border-[#F4BB44] bg-[#F4BB44]/10 text-[#A45C40]"
-                  : "border-[#A45C40]/20 text-[#6B4030] hover:border-[#A45C40]/40 bg-white"
-              }`}
-            >
-              <span className="text-2xl">{m.icon}</span>
-              <span className="text-sm font-semibold">{m.label}</span>
-            </button>
-          ))}
+        {/* Badge mode fixe */}
+        <div className="flex items-center gap-2 justify-center mb-6 p-3 rounded-xl bg-[#F4BB44]/10 border border-[#F4BB44]/30">
+          <span className="text-xl">🏪</span>
+          <span className="text-sm font-semibold text-[#A45C40]">Commande à emporter uniquement</span>
         </div>
 
         {/* Formulaire */}
@@ -986,7 +973,7 @@ function CheckoutPage({ onBack }) {
           {/* Créneaux horaires cliquables */}
           <div>
             <label className="block text-xs text-[#6B4030] mb-2 uppercase tracking-wider font-medium">
-              Heure de retrait / livraison *
+              Heure de retrait *
             </label>
             {[
               { label: "🌞 Midi", slots: ["12h00","12h30","13h00","13h30","14h00"] },
@@ -1020,27 +1007,39 @@ function CheckoutPage({ onBack }) {
             )}
           </div>
 
-          {mode === "delivery" && (
-            <div>
-              <label className="block text-xs text-[#6B4030] mb-1.5 uppercase tracking-wider font-medium">
-                Adresse de livraison *
-              </label>
+          {/* Code promo */}
+          <div>
+            <label className="block text-xs text-[#6B4030] mb-1.5 uppercase tracking-wider font-medium">
+              Code promo
+            </label>
+            <div className="flex gap-2">
               <input
-                name="address"
                 type="text"
-                placeholder="17 Bd Franchet d'Espérey, Lorient"
-                value={form.address}
-                onChange={handleChange}
-                autoComplete="street-address"
-                className={`w-full bg-white border rounded-xl px-4 py-3 text-[#1A0A00] text-sm placeholder:text-[#A45C40]/40 focus:outline-none transition shadow-sm ${
-                  errors.address ? "border-red-400" : "border-[#A45C40]/20 focus:border-[#F4BB44]"
+                placeholder="ex: TAJ10"
+                value={promoApplied ? PROMO_CODE : promoInput}
+                onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(""); }}
+                disabled={promoApplied}
+                className={`flex-1 bg-white border rounded-xl px-4 py-3 text-[#1A0A00] text-sm uppercase tracking-widest placeholder:text-[#A45C40]/40 focus:outline-none transition shadow-sm ${
+                  promoApplied ? "border-[#2D6A4F] bg-[#2D6A4F]/5" : promoError ? "border-red-400" : "border-[#A45C40]/20 focus:border-[#F4BB44]"
                 }`}
               />
-              {errors.address && (
-                <p className="text-red-500 text-xs mt-1">{errors.address}</p>
-              )}
+              <button
+                type="button"
+                onClick={handleApplyPromo}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                  promoApplied
+                    ? "bg-[#2D6A4F]/10 text-[#2D6A4F] border border-[#2D6A4F]/30"
+                    : "bg-[#F4BB44] text-[#1A0A00] hover:brightness-105"
+                }`}
+              >
+                {promoApplied ? "✓ Actif" : "Appliquer"}
+              </button>
             </div>
-          )}
+            {promoApplied && (
+              <p className="text-[#2D6A4F] text-xs mt-1 font-semibold">🎉 -10% appliqués — vous économisez {discount.toFixed(2)} €</p>
+            )}
+            {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+          </div>
 
           <div>
             <label className="block text-xs text-[#6B4030] mb-1.5 uppercase tracking-wider font-medium">
@@ -1153,7 +1152,7 @@ function FridayBanner() {
 // Objectif : +10 avis Google 5★ / mois → remonte dans Maps
 // ─────────────────────────────────────────────────────────────────
 function ReviewSection() {
-  // https://g.page/r/CTvTozVxouYtEAE/review
+  // ← Remplacez ce lien par votre vrai lien Google Reviews
   // Pour le trouver : Google Maps → votre fiche → "Demander des avis"
   const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=VOTRE_PLACE_ID";
 
@@ -1195,7 +1194,7 @@ function ReviewSection() {
           <p className="text-[#6B4030] text-base leading-relaxed mb-8 max-w-lg mx-auto">
             Vous avez apprécié votre repas ? Laissez-nous un avis{" "}
             <strong className="text-[#1A0A00]">5 étoiles sur Google</strong> et recevez un{" "}
-            <strong className="text-[#1A0A00]">produit offert</strong> à votre prochaine visite.
+            <strong className="text-[#1A0A00]">dessert maison offert</strong> à votre prochaine visite.
             Mentionnez simplement votre avis au comptoir.
           </p>
 
@@ -1204,7 +1203,7 @@ function ReviewSection() {
             {[
               { num: "1", icon: "📱", text: "Cliquez sur le bouton ci-dessous" },
               { num: "2", icon: "⭐", text: "Laissez un avis 5 étoiles" },
-              { num: "3", icon: "🍮", text: "Réclamez votre produit au comptoir" },
+              { num: "3", icon: "🍮", text: "Réclamez votre dessert au comptoir" },
             ].map((step) => (
               <div key={step.num} className="flex flex-col items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-[#F4BB44] text-[#1A0A00] flex items-center justify-center text-xs font-black">
@@ -1235,10 +1234,10 @@ function ReviewSection() {
 
           <p className="text-[#6B4030]/50 text-xs mt-4">
             ⭐ {" "}
-            <span className="font-semibold text-[#6B4030]">435 avis</span>
+            <span className="font-semibold text-[#6B4030]">524 avis</span>
             {" "} · Note moyenne {" "}
-            <span className="font-semibold text-[#6B4030]">4.3/5</span>
-            {" "} — Aidez-nous à atteindre 500 avis !
+            <span className="font-semibold text-[#6B4030]">4.9/5</span>
+            {" "} — Aidez-nous à atteindre 600 avis !
           </p>
         </motion.div>
       </div>
@@ -1387,9 +1386,9 @@ function Hero({ onOrder }) {
 
         {/* Social proof */}
         <div className="flex items-center justify-center gap-4 mt-10 text-sm text-[#6B4030]">
-          <span>⭐ 4.3 / 5</span>
+          <span>⭐ 4.9 / 5</span>
           <span className="w-px h-4 bg-[#A45C40]/30" />
-          <span>435 avis Google</span>
+          <span>524 avis Google</span>
           <span className="w-px h-4 bg-[#A45C40]/30" />
           <span>Ouvert 7j/7</span>
         </div>
@@ -1632,6 +1631,7 @@ function AdminLogin({ onLogin }) {
 function OrderCard({ order, onStatusChange }) {
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const time = new Date(order.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const date = new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   const [updating, setUpdating] = useState(false);
 
   const handleNext = async () => {
@@ -1643,6 +1643,52 @@ function OrderCard({ order, onStatusChange }) {
       .eq("id", order.id);
     if (!error) onStatusChange(order.id, cfg.next);
     setUpdating(false);
+  };
+
+  const handlePrint = () => {
+    const items = (order.items || [])
+      .map(i => `<tr><td style="padding:1px 0">${i.nom} × ${i.qty}</td><td style="text-align:right">${(i.prix * i.qty).toFixed(2)} &euro;</td></tr>`)
+      .join("");
+    const naanRow = order.naan_gift
+      ? `<tr><td>🎁 Naan Fromage offert</td><td style="text-align:right">0.00 &euro;</td></tr>`
+      : "";
+    const noteRow = order.note
+      ? `<p style="margin:6px 0;padding:4px 6px;background:#fff8e1;border:1px solid #f9a825;border-radius:4px;font-size:11px">⚠️ ${order.note}</p>`
+      : "";
+    const win = window.open("", "_blank", "width=340,height=600");
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Courier New', monospace; font-size: 12px; width: 300px; padding: 8px; color: #000; }
+        h1 { font-size: 16px; text-align: center; font-weight: bold; margin-bottom: 2px; }
+        .sub { font-size: 10px; text-align: center; margin-bottom: 6px; color: #444; }
+        hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .total { font-size: 14px; font-weight: bold; text-align: right; margin-top: 4px; }
+        .footer { text-align: center; font-size: 10px; margin-top: 8px; }
+        @media print { @page { margin: 0; size: 80mm auto; } }
+      </style>
+    </head><body>
+      <h1>TAJ MAHAL</h1>
+      <div class="sub">Restaurant Indien — Lorient<br>02 97 84 04 04</div>
+      <hr>
+      <div style="font-size:11px;margin-bottom:4px">
+        <strong>${order.customer_name}</strong> — 📞 ${order.customer_phone}<br>
+        🕐 Retrait à <strong>${order.pickup_time}</strong> — ${date} ${time}<br>
+        Commande #${order.id.slice(-6).toUpperCase()}
+      </div>
+      <hr>
+      <table>${items}${naanRow}</table>
+      <hr>
+      <div class="total">TOTAL : ${Number(order.total).toFixed(2)} €</div>
+      ${noteRow}
+      <hr>
+      <div class="footer">Merci pour votre commande !<br>Laissez-nous un avis Google ⭐</div>
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 300);
   };
 
   return (
@@ -1675,9 +1721,16 @@ function OrderCard({ order, onStatusChange }) {
             <span>🕐 {order.pickup_time}</span>
           </div>
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 flex flex-col items-end gap-1">
           <p className="text-[#A45C40] font-bold text-lg">{Number(order.total).toFixed(2)} €</p>
           <p className="text-[#6B4030]/50 text-xs">{time}</p>
+          <button
+            onClick={handlePrint}
+            title="Imprimer ticket 80mm"
+            className="text-[10px] px-2 py-1 rounded-lg border border-[#A45C40]/20 text-[#6B4030] hover:bg-[#F4BB44]/10 hover:border-[#F4BB44] transition flex items-center gap-1"
+          >
+            🖨️ Imprimer
+          </button>
         </div>
       </div>
 
@@ -1729,6 +1782,7 @@ function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("active"); // "active" | "done"
+  const audioRef = useRef(null);
   const prevCountRef = useRef(0);
 
   // Charger les commandes initiales
@@ -1855,4 +1909,3 @@ function AdminPage() {
 }
 
 export default App;
-Fix: remove unused audioRef and escape char
