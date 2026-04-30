@@ -61,7 +61,7 @@ const supabase = createClient(
 // Texte secondaire   : #6B4030
 // Vert succès        : #2D6A4F
 
-const ADMIN_PIN = "CHANGEZ-MOI"; // ← remplacez par votre PIN
+const ADMIN_PIN = "2497"; // ← remplacez par votre PIN
 const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=VOTRE_PLACE_ID"; // ← remplacez
 const DISCOUNT_RATE = 0.10; // -10% automatique à emporter
 
@@ -906,10 +906,10 @@ function ReviewSection() {
             ))}
           </div>
           <p className="text-[#A45C40] text-xs uppercase tracking-[0.4em] mb-2">Programme fidélité</p>
-          <h2 className="text-3xl text-[#1A0A00] mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Un avis 5★ = un dessert offert</h2>
+            <h2 className="text-3xl text-[#1A0A00] mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Un avis 5★ = un naan fromage offert</h2>
           <div className="w-14 h-px bg-gradient-to-r from-transparent via-[#F4BB44] to-transparent mx-auto mb-5" />
           <p className="text-[#6B4030] text-sm leading-relaxed mb-7 max-w-md mx-auto">
-            Vous avez apprécié votre repas ? Laissez-nous un avis <strong className="text-[#1A0A00]">5 étoiles sur Google</strong> et recevez un <strong className="text-[#1A0A00]">dessert maison offert</strong> à votre prochaine visite. Mentionnez simplement votre avis au comptoir.
+            Vous avez apprécié votre repas ? Laissez-nous un avis <strong className="text-[#1A0A00]">5 étoiles sur Google</strong> et recevez un <strong className="text-[#1A0A00]">naan fromage offert</strong> à votre prochaine visite. Mentionnez simplement votre avis au comptoir.
           </p>
 
           <div className="grid grid-cols-3 gap-4 mb-7">
@@ -1076,7 +1076,7 @@ function OrderCard({ order, onStatusChange }) {
       <div class="total">TOTAL : ${Number(order.total).toFixed(2)} €</div>
       ${noteRow}
       <hr>
-      <div class="footer">Merci pour votre commande !<br>Un avis Google 5★ = un dessert offert ⭐</div>
+      <div class="footer">Merci pour votre commande !<br>Un avis Google 5★ = un naan fromage offert ⭐</div>
     </body></html>`);
     win.document.close();
     win.focus();
